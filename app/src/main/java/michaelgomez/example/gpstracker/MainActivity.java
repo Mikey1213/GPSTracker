@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        locationRequest = new LocationRequest();
         tv_lat = findViewById(R.id.tv_lat);
         tv_lon = findViewById(R.id.tv_lon);
         tv_altitude = findViewById(R.id.tv_altitude);
@@ -147,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
     private void updateGPS() {
         //get permissions from the user to track GPS
 
-        //get teh current location from the fused client
+        //get the current location from the fused client
 
         //update the UI, set all properties in their associated text view items
 
@@ -155,12 +156,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (ActivityCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             //the user provided the permission
-            fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                @Override
-                public void onSuccess(Location location) {
-                    //we got permissions. Put the values of location. XXX (lat, long etc.) into the UI components
-                    updateUIValues(location);
-                }
+            fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, location -> {
+                //we got permissions. Put the values of location. XXX (lat, long etc.) into the UI components
+                tv_updates.setText("We got permission! lets gooo");
+                updateUIValues(location);
             });
         } else {
             //permissions not yet granted
@@ -175,7 +174,6 @@ public class MainActivity extends AppCompatActivity {
         tv_lat.setText(String.valueOf(location.getLatitude()));
         tv_lon.setText(String.valueOf(location.getLongitude()));
         tv_accuracy.setText(String.valueOf(location.getAccuracy()));
-
         if (location.hasAltitude()) {
             tv_altitude.setText(String.valueOf(location.getAltitude()));
         } else {
