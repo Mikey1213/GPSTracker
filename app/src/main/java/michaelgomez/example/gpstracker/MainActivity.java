@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.Calendar;
 import android.Manifest;
 import android.content.Context;
@@ -45,8 +47,6 @@ public class MainActivity extends AppCompatActivity {
 
     LocationCallback locationCallback;
 
-    long lastTime = System.currentTimeMillis();
-    long currentTime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,8 +68,8 @@ public class MainActivity extends AppCompatActivity {
         sw_gps = findViewById(R.id.sw_gps);
 
         //set all properties of LocationRequest
-        locationRequest.setInterval(1000);
-        locationRequest.setFastestInterval(800);
+        locationRequest.setInterval(100);
+        locationRequest.setFastestInterval(20);
         locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
         //event triggered whenever update interval is met (ex. 5 sec)
@@ -80,8 +80,11 @@ public class MainActivity extends AppCompatActivity {
                 super.onLocationResult(locationResult);
 
                 //save the location
-
-                updateUIValues(locationResult.getLastLocation());
+                try {
+                    updateUIValues(locationResult.getLastLocation());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         };
 
@@ -97,7 +100,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-
 
         sw_locationupdates.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -172,7 +174,11 @@ public class MainActivity extends AppCompatActivity {
             fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, location -> {
                 //we got permissions. Put the values of location. XXX (lat, long etc.) into the UI components
                 tv_updates.setText("Location is being tracked");
-                updateUIValues(location);
+                try {
+                    updateUIValues(location);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             });
         } else {
             //permissions not yet granted
@@ -182,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void updateUIValues(Location location) {
+    private void updateUIValues(Location location) throws IOException {
         //update all of the text view objects to a new location
         tv_lat.setText(String.valueOf(location.getLatitude()));
         tv_lon.setText(String.valueOf(location.getLongitude()));
@@ -201,16 +207,29 @@ public class MainActivity extends AppCompatActivity {
 
         Date currentTime = Calendar.getInstance().getTime();
         tv_address.setText(currentTime.toString());
+
+        writeToFile("\nLat: " + String.valueOf(location.getLatitude()) + "\nLon: " + String.valueOf(location.getLongitude()),this);
     }
 
-    private void writeToFile(String data, Context context) {
+    private void writeToFile(String data, Context context) throws IOException {
+        File path = context.getFilesDir();
+        File file = new File(path, "location-data.txt");
+
+        FileOutputStream stream = new FileOutputStream(file);
         try {
-            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput("config.txt", Context.MODE_PRIVATE));
-            outputStreamWriter.write(data);
-            outputStreamWriter.close();
+            stream.write(data.getBytes());
+        } finally {
+            stream.close();
         }
-        catch (IOException e) {
-            Log.e("Exception", "File write failed: " + e.toString());
-        }
+
+
+//        try {
+//            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput("config.txt", Context.MODE_PRIVATE));
+//            outputStreamWriter.write(data);
+//            outputStreamWriter.close();
+//        }
+//        catch (IOException e) {
+//            Log.e("Exception", "File write failed: " + e.toString());
+//        }
     }
 }
