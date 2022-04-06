@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import java.util.Calendar;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -26,6 +27,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -43,6 +45,9 @@ public class MainActivity extends AppCompatActivity {
 
     LocationCallback locationCallback;
 
+    long lastTime = System.currentTimeMillis();
+    long currentTime;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
         tv_altitude = findViewById(R.id.tv_altitude);
         tv_accuracy = findViewById(R.id.tv_accuracy);
         tv_speed = findViewById(R.id.tv_speed);
-        tv_sensor = findViewById(R.id.tv_speed);
+        tv_sensor = findViewById(R.id.tv_sensor);
         tv_updates = findViewById(R.id.tv_updates);
         tv_address = findViewById(R.id.tv_address);
         sw_gps = findViewById(R.id.sw_gps);
@@ -63,8 +68,8 @@ public class MainActivity extends AppCompatActivity {
         sw_gps = findViewById(R.id.sw_gps);
 
         //set all properties of LocationRequest
-        locationRequest.setInterval(5000);
-        locationRequest.setFastestInterval(1000);
+        locationRequest.setInterval(1000);
+        locationRequest.setFastestInterval(800);
         locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
         //event triggered whenever update interval is met (ex. 5 sec)
@@ -75,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
                 super.onLocationResult(locationResult);
 
                 //save the location
+
                 updateUIValues(locationResult.getLastLocation());
             }
         };
@@ -91,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
 
         sw_locationupdates.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -132,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, null);
+        updateGPS();
     }
 
     @Override
@@ -163,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
             //the user provided the permission
             fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, location -> {
                 //we got permissions. Put the values of location. XXX (lat, long etc.) into the UI components
-                tv_updates.setText("We got permission! lets gooo");
+                tv_updates.setText("Location is being tracked");
                 updateUIValues(location);
             });
         } else {
@@ -185,6 +193,14 @@ public class MainActivity extends AppCompatActivity {
             tv_altitude.setText("No altitude available");
         }
 
+        if (location.hasSpeed()) {
+            tv_speed.setText(String.valueOf(location.getSpeed()));
+        } else {
+            tv_speed.setText("Not available");
+        }
+
+        Date currentTime = Calendar.getInstance().getTime();
+        tv_address.setText(currentTime.toString());
     }
 
     private void writeToFile(String data, Context context) {

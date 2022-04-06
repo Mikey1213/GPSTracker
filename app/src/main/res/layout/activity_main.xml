@@ -163,6 +163,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tv_labelspeed" />
 
+
     <View
         android:id="@+id/divider"
         android:layout_width="409dp"
