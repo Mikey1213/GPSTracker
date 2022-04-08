@@ -9,7 +9,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.StringWriter;
 import java.util.Calendar;
 import android.Manifest;
 import android.content.Context;
@@ -35,6 +38,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Date;
+import java.util.Scanner;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -198,17 +202,19 @@ public class MainActivity extends AppCompatActivity {
         tv_lat.setText(String.valueOf(location.getLatitude()));
         tv_lon.setText(String.valueOf(location.getLongitude()));
         tv_accuracy.setText(String.valueOf(location.getAccuracy()));
+
         if (location.hasAltitude()) {
             tv_altitude.setText(String.valueOf(location.getAltitude()));
         } else {
             tv_altitude.setText("No altitude available");
         }
 
+        /*
         if (location.hasSpeed()) {
             tv_speed.setText(String.valueOf(location.getSpeed()));
         } else {
             tv_speed.setText("Not available");
-        }
+        }*/
 
         Date currentTime = Calendar.getInstance().getTime();
         tv_address.setText(currentTime.toString());
@@ -218,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    void writeToFile(String toAdd) {
+    private void writeToFile(String toAdd) {
         // check for permissions:
         if (ActivityCompat.checkSelfPermission(this, WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
             // if we have permissions to write to files,
@@ -234,9 +240,10 @@ public class MainActivity extends AppCompatActivity {
                     myOutWriter.append(toAdd);
                     myOutWriter.close();
                     fOut.close();
+                    readGPSFile(myFile);
                 } catch(Exception e)
                 {
-
+                    e.printStackTrace();
                 }
             }
             else
@@ -253,6 +260,24 @@ public class MainActivity extends AppCompatActivity {
                 requestPermissions(new String[]{WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE}, 1);
             }
         }
+    }
+
+    private String readGPSFile(File myFile) {
+        try {
+            FileInputStream toRead = new FileInputStream(myFile);
+            Scanner reader = new Scanner(toRead);
+            StringWriter text = new StringWriter();
+            while (reader.hasNext()) {
+                text.append(reader.next());
+            }
+            String txtString = text.toString();
+            tv_speed.setText(txtString);
+            return txtString;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        tv_speed.setText("failed to read file");
+        return "failed to read file"; // should not do this
     }
 
 }
