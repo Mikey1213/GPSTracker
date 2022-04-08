@@ -1,6 +1,10 @@
 package michaelgomez.example.gpstracker;
 
+import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
@@ -13,6 +17,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.Switch;
@@ -208,28 +213,46 @@ public class MainActivity extends AppCompatActivity {
         Date currentTime = Calendar.getInstance().getTime();
         tv_address.setText(currentTime.toString());
 
-        writeToFile("\nLat: " + String.valueOf(location.getLatitude()) + "\nLon: " + String.valueOf(location.getLongitude()),this);
-    }
-
-    private void writeToFile(String data, Context context) throws IOException {
-        File path = context.getFilesDir();
-        File file = new File(path, "location-data.txt");
-
-        FileOutputStream stream = new FileOutputStream(file);
-        try {
-            stream.write(data.getBytes());
-        } finally {
-            stream.close();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            writeToFile("\nLat: " + String.valueOf(location.getLatitude()) + "\nLon: " + String.valueOf(location.getLongitude()));
         }
-
-
-//        try {
-//            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput("config.txt", Context.MODE_PRIVATE));
-//            outputStreamWriter.write(data);
-//            outputStreamWriter.close();
-//        }
-//        catch (IOException e) {
-//            Log.e("Exception", "File write failed: " + e.toString());
-//        }
     }
+
+    void writeToFile(String toAdd) {
+        // check for permissions:
+        if (ActivityCompat.checkSelfPermission(this, WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            // if we have permissions to write to files,
+            File externalStorageDir = Environment.getExternalStorageDirectory();
+            File myFile = new File(externalStorageDir , "testGPS.txt");
+
+            if(myFile.exists())
+            {
+                try
+                {
+                    FileOutputStream fOut = new FileOutputStream(myFile);
+                    OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);
+                    myOutWriter.append(toAdd);
+                    myOutWriter.close();
+                    fOut.close();
+                } catch(Exception e)
+                {
+
+                }
+            }
+            else
+            {
+                try {
+                    myFile.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            // else request permissions
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(new String[]{WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE}, 1);
+            }
+        }
+    }
+
 }
