@@ -7,21 +7,29 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Switch;
@@ -232,7 +240,8 @@ public class MainActivity extends AppCompatActivity {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
            writeToFile("\nLat: " + String.valueOf(location.getLatitude()) + "\nLon: " + String.valueOf(location.getLongitude()));
-           readGPSFile();
+            sendSms("Lat: " + String.valueOf(location.getLatitude()) + "\nLon: " + String.valueOf(location.getLongitude()));
+            readGPSFile();
         }
     }
 
@@ -342,6 +351,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void closeFile() {
+*/
+    private void sendSms(String text) {
+        //SmsManager sms = SmsManager.getDefault();
+        //sms.sendTextMessage("7247133759",null,text,null,null);
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
+            SmsManager sms = SmsManager.getDefault();
+            sms.sendTextMessage("smsto: 19258225557",null,text,null,null);
+            Toast.makeText(getApplicationContext(),"Sent successfully!",Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(getApplicationContext(), "Massive fail", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+/*
+    private String readGPSFile(File myFile) {
         try {
             myOutWriter.close();
             fOut.close();
