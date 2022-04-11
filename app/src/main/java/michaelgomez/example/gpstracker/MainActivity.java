@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Calendar;
 import android.Manifest;
@@ -43,14 +44,14 @@ import java.util.Scanner;
 public class MainActivity extends AppCompatActivity {
 
     private static final int PERMISSIONS_FINE_LOCATION = 99;
-    TextView tv_lat, tv_lon, tv_altitude, tv_accuracy, tv_speed, tv_sensor, tv_updates, tv_address;
+    TextView tv_lat, tv_lon, tv_altitude, tv_accuracy, tv_speed, tv_sensor, tv_updates, tv_address, fileIO;
 
     Switch sw_locationupdates, sw_gps;
 
     //Google's api for location services. The majority of the app function using this class.
     FusedLocationProviderClient fusedLocationProviderClient;
 
-    boolean updateOn = false;
+    boolean updateOn = true; // TODO: what is this for?
 
     LocationRequest locationRequest;
 
@@ -75,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
         tv_lat = findViewById(R.id.tv_lat);
         sw_locationupdates = findViewById(R.id.sw_locationsupdates);
         sw_gps = findViewById(R.id.sw_gps);
+        fileIO = findViewById(R.id.fileIO);
 
         //set all properties of LocationRequest
         locationRequest.setInterval(100);
@@ -92,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     updateUIValues(locationResult.getLastLocation());
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    tv_altitude.setText(e.getMessage());
                 }
             }
         };
@@ -114,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (sw_locationupdates.isChecked()) {
+                    // open file if not already open
                     startLocationUpdates();
                 } else {
                     stopLocationUpdates();
@@ -128,17 +131,25 @@ public class MainActivity extends AppCompatActivity {
         tv_updates.setText("Location is NOT being tracked");
         tv_lat.setText("Not tracking location");
         tv_lon.setText("Not tracking location");
-        tv_speed.setText("Not tracking location");
+        //tv_speed.setText("Not tracking location");
         tv_address.setText("Not tracking location");
         tv_accuracy.setText("Not tracking location");
-        tv_altitude.setText("Not tracking location");
+        //tv_altitude.setText("Not tracking location");
         tv_sensor.setText("Not tracking location");
 
+        // TODO: fix for separate file open/close functions
+        //closeFile();
+        //readGPSFile();
         fusedLocationProviderClient.removeLocationUpdates(locationCallback);
     }
 
     private void startLocationUpdates() {
         tv_updates.setText("Location is being tracked");
+        //TODO: fix for separate file open/close functions
+        /*if (!isFileOpen) {
+            //openFile();
+        }*/
+
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
@@ -147,6 +158,7 @@ public class MainActivity extends AppCompatActivity {
             //                                          int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
+            // TODO: what is this for^^^^
             return;
         }
         fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, null);
@@ -171,9 +183,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateGPS() {
         //get permissions from the user to track GPS
-
         //get the current location from the fused client
-
         //update the UI, set all properties in their associated text view items
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
@@ -203,11 +213,12 @@ public class MainActivity extends AppCompatActivity {
         tv_lon.setText(String.valueOf(location.getLongitude()));
         tv_accuracy.setText(String.valueOf(location.getAccuracy()));
 
+        /*
         if (location.hasAltitude()) {
             tv_altitude.setText(String.valueOf(location.getAltitude()));
         } else {
             tv_altitude.setText("No altitude available");
-        }
+        }*/
 
         /*
         if (location.hasSpeed()) {
@@ -220,41 +231,30 @@ public class MainActivity extends AppCompatActivity {
         tv_address.setText(currentTime.toString());
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            writeToFile("\nLat: " + String.valueOf(location.getLatitude()) + "\nLon: " + String.valueOf(location.getLongitude()));
+           writeToFile("\nLat: " + String.valueOf(location.getLatitude()) + "\nLon: " + String.valueOf(location.getLongitude()));
+           readGPSFile();
         }
     }
 
     private void writeToFile(String toAdd) {
-        // check for permissions:
         if (ActivityCompat.checkSelfPermission(this, WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-            // if we have permissions to write to files,
-            File externalStorageDir = Environment.getExternalStorageDirectory();
-            File myFile = new File(externalStorageDir , "testGPS.txt");
-
-            if(myFile.exists())
-            {
-                try
-                {
-                    FileOutputStream fOut = new FileOutputStream(myFile);
-                    OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);
-                    myOutWriter.append(toAdd);
-                    myOutWriter.close();
-                    fOut.close();
-                    readGPSFile(myFile);
-                } catch(Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
-            else
-            {
-                try {
+            File storageDir = this.getExternalFilesDir(null);
+            File myFile = new File(storageDir , "testGPS.txt");
+            try {
+                if (!myFile.exists()) {
                     myFile.createNewFile();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    tv_speed.setText("New file created " + Calendar.getInstance().getTime());
                 }
+                FileOutputStream fOut = new FileOutputStream(myFile, true);
+                OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);
+                myOutWriter.append(toAdd);
+                tv_altitude.setText("write success " + Calendar.getInstance().getTime());
+                myOutWriter.close();
+                fOut.close();
+            } catch (Exception e){
+                tv_altitude.setText("error in writing to file");
             }
-        } else {
+        }else {
             // else request permissions
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 requestPermissions(new String[]{WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE}, 1);
@@ -262,22 +262,136 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private String readGPSFile(File myFile) {
-        try {
-            FileInputStream toRead = new FileInputStream(myFile);
-            Scanner reader = new Scanner(toRead);
-            StringWriter text = new StringWriter();
-            while (reader.hasNext()) {
-                text.append(reader.next());
+    private void readGPSFile() {
+        if (ActivityCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            File storageDir = this.getExternalFilesDir(null);
+            File myFile = new File(storageDir , "testGPS.txt");
+            // open file^^
+            try {
+                FileInputStream toRead = new FileInputStream(myFile);
+                Scanner reader = new Scanner(toRead);
+                StringWriter text = new StringWriter();
+                while (reader.hasNext()) {
+                    text.append(reader.next());
+                }
+                fileIO.setText(text.toString() + Calendar.getInstance().getTime());
+
+                text.close();
+                reader.close();
+                toRead.close();
+            } catch (Exception e) {
+                tv_altitude.setText("exception in reading file");
             }
-            String txtString = text.toString();
-            tv_speed.setText(txtString);
-            return txtString;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        }else {
+            // else request permissions
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(new String[]{WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE}, 1);
+            }
         }
-        tv_speed.setText("failed to read file");
-        return "failed to read file"; // should not do this
     }
 
+    void clearGPSFile() {
+        File storageDir = this.getExternalFilesDir(null);
+        File myFile = new File(storageDir , "testGPS.txt");
+        if (myFile.exists()) {
+            try {
+                FileOutputStream fOut = new FileOutputStream(myFile);
+                OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);
+                myOutWriter.append("");
+                myOutWriter.close();
+                fOut.close();
+            } catch (IOException e) {
+                tv_altitude.setText("exception in clearing file: " + e.getMessage());
+            }
+        }
+
+
+    }
+
+    //TODO: add a clear file function, and a clear file button/switch?
+
+    // TODO: Attempt at separated open/close functions... do we need this?
+    //File IO variables that would be required:
+    /*
+    File externalStorageDir;
+    File myFile;
+    OutputStreamWriter myOutWriter;
+    FileOutputStream fOut;*/
+    //boolean isFileOpen = false;
+
+    /*
+    private void openFile() {
+        // initialize IO variables, and open file called "testGPS.txt"
+        if (ActivityCompat.checkSelfPermission(this, WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            externalStorageDir = Environment.getExternalStorageDirectory();
+            myFile = new File(externalStorageDir , "testGPS.txt");
+            try {
+                myFile.createNewFile();
+                fOut = new FileOutputStream(myFile);
+                myOutWriter = new OutputStreamWriter(fOut);
+                isFileOpen = true;
+            } catch (Exception e){
+                tv_altitude.setText(e.getMessage());
+            }
+        }else {
+            // else request permissions
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(new String[]{WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE}, 1);
+            }
+        }
+    }
+
+    private void closeFile() {
+        try {
+            myOutWriter.close();
+            fOut.close();
+        } catch (IOException e) {
+            tv_altitude.setText(e.getMessage());
+        }
+        isFileOpen = false;
+    }
+
+    private void writeToFile(String toAdd) {
+        openFile();
+        if(myFile.exists()) {
+            try {
+                myOutWriter.append(toAdd);
+            } catch(Exception e) {
+                tv_altitude.setText(e.getMessage());
+            }
+        }
+        else {
+            //openFile(); // file should already be open at this point
+        }
+        closeFile();
+    }
+    */
+    /*
+    private void readGPSFile() {
+        if (ActivityCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            externalStorageDir = Environment.getExternalStorageDirectory();
+            myFile = new File(externalStorageDir , "testGPS.txt");
+            // open file^^
+            try {
+                FileInputStream toRead = new FileInputStream(myFile);
+                Scanner reader = new Scanner(toRead);
+                StringWriter text = new StringWriter();
+                while (reader.hasNext()) {
+                    text.append(reader.next());
+                }
+                tv_speed.setText(text.toString());
+                text.close();
+                reader.close();
+                toRead.close();
+            } catch (Exception e) {
+                tv_altitude.setText(e.getMessage());
+            }
+        }else {
+            // else request permissions
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(new String[]{WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE}, 1);
+            }
+        }
+        tv_speed.setText("failed to read file");
+    } */
 }
