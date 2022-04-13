@@ -69,8 +69,8 @@ public class MainActivity extends AppCompatActivity {
         bt_clearFile = findViewById(R.id.bt_clearFile);
 
         //set all properties of LocationRequest
-        locationRequest.setInterval(100);
-        locationRequest.setFastestInterval(20);
+        locationRequest.setInterval(1000);
+        locationRequest.setFastestInterval(1000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         //event triggered whenever update interval is met (ex. 5 sec)
@@ -268,10 +268,11 @@ public class MainActivity extends AppCompatActivity {
         //sms.sendTextMessage("7247133759",null,text,null,null);
         if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
             SmsManager sms = SmsManager.getDefault();
-            sms.sendTextMessage("smsto: 19258225557",null,text,null,null);
+            //sms.sendTextMessage("smsto: 19258225557",null,text,null,null);
+            sms.sendTextMessage("smsto: 17249672920",null,text,null,null);
             Toast.makeText(getApplicationContext(),"Sent successfully!",Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(getApplicationContext(), "Massive fail", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "Failed to deliver", Toast.LENGTH_SHORT).show();
         }
     }
 
